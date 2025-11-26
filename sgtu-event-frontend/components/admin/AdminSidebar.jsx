@@ -132,6 +132,13 @@ export default function AdminSidebar({ onLogout }) {
         />
 
         <SidebarLink
+          label="Event Managers"
+          icon="manage_accounts"
+          active={pathname === "/admin/event-managers"}
+          onClick={() => router.push("/admin/event-managers")}
+        />
+
+        <SidebarLink
           label="Attendance Log"
           icon="fact_check"
           active={pathname === "/admin/scans"}

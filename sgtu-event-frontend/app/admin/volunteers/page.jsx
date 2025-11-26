@@ -510,9 +510,9 @@ export default function AdminVolunteersPage() {
                   <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-4 uppercase tracking-wide">Details</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Enrollment ID</label>
-                      <div className="text-sm font-medium text-dark-text">
-                        {selectedVolunteer.id?.substring(0, 8).toUpperCase() || "N/A"}
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Volunteer UUID (Database ID)</label>
+                      <div className="text-xs font-mono text-dark-text break-all">
+                        {selectedVolunteer.id || "N/A"}
                       </div>
                     </div>
                     <div>

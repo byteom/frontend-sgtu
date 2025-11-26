@@ -27,10 +27,10 @@ export default function AdminMobileNav() {
 
       <div className="grid grid-cols-5 gap-1 p-2 max-w-xl mx-auto">
         <NavItem label="Home" to="/admin" icon="dashboard" />
+        <NavItem label="Events" to="/admin/events" icon="event" />
+        <NavItem label="Managers" to="/admin/event-managers" icon="manage_accounts" />
         <NavItem label="Students" to="/admin/students" icon="school" />
         <NavItem label="Volunteers" to="/admin/volunteers" icon="group" />
-        <NavItem label="Stalls" to="/admin/stalls" icon="store" />
-        <NavItem label="Scans" to="/admin/scans" icon="qr_code_scanner" />
       </div>
     </nav>
   );

@@ -57,8 +57,9 @@ export default function AllStallsPage() {
       // Prepare data for Excel export
       const excelData = allStalls.map((stall, index) => ({
         'S.No': index + 1,
-        'Stall ID': `SGT-${String(stall.stall_number || '').padStart(3, '0')}`,
+        'Stall UUID': stall.id || '',
         'Stall Number': stall.stall_number || '',
+        'Display ID': `SGT-${String(stall.stall_number || '').padStart(3, '0')}`,
         'Stall Name': stall.stall_name || '',
         'School/Department': stall.school_name || '',
         'Description': stall.description || '',
@@ -725,7 +726,16 @@ export default function AllStallsPage() {
                   <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-4 uppercase tracking-wide">Stall Information</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-dark-text mb-2">Stall ID</label>
+                      <label className="block text-sm font-medium text-dark-text mb-2">Stall UUID (Database ID)</label>
+                      <input
+                        type="text"
+                        value={selectedStall.id || ""}
+                        disabled
+                        className="w-full px-4 py-2 border border-light-gray-border rounded-lg bg-soft-background text-gray-500 cursor-not-allowed font-mono text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-dark-text mb-2">Display ID</label>
                       <input
                         type="text"
                         value={`SGT-${String(selectedStall.stall_number || "").padStart(3, '0')}`}

@@ -7,6 +7,7 @@ import EventManagerHeader from "@/components/event-manager/EventManagerHeader";
 import EventManagerMobileNav from "@/components/event-manager/EventManagerMobileNav";
 import api from "@/lib/api";
 import { useEventManagerAuth } from "@/hooks/useAuth";
+import * as XLSX from "xlsx";
 
 export default function EventDetailPage() {
   const { isAuthenticated, isChecking } = useEventManagerAuth();
@@ -66,7 +67,7 @@ export default function EventDetailPage() {
       }
 
       if (registrationsRes.data?.success) {
-        setRegistrations(registrationsRes.data.data.registrations || []);
+        setRegistrations(registrationsRes.data.data.data || []);
       }
 
       if (stallsRes.data?.success) {
@@ -217,7 +218,7 @@ export default function EventDetailPage() {
 
             {/* Tab Content */}
             {activeTab === "overview" && (
-              <OverviewTab event={event} stats={stats} />
+              <OverviewTab event={event} stats={stats} registrations={registrations} volunteers={volunteers} stalls={stalls} />
             )}
 
             {activeTab === "volunteers" && (
@@ -267,7 +268,7 @@ function TabButton({ label, icon, count, active, onClick }) {
   );
 }
 
-function OverviewTab({ event, stats }) {
+function OverviewTab({ event, stats, registrations, volunteers, stalls }) {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -276,14 +277,12 @@ function OverviewTab({ event, stats }) {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Total Registrations" value={stats.total_registrations || 0} icon="how_to_reg" />
-          <StatCard title="Confirmed" value={stats.confirmed_registrations || 0} icon="check_circle" positive />
-          <StatCard title="Volunteers Assigned" value={stats.total_volunteers || 0} icon="groups" />
-          <StatCard title="Stalls Assigned" value={stats.total_stalls || 0} icon="store" />
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Registrations" value={registrations?.length || 0} icon="how_to_reg" />
+        <StatCard title="Confirmed" value={stats?.confirmed_registrations || 0} icon="check_circle" positive />
+        <StatCard title="Volunteers Assigned" value={volunteers?.length || 0} icon="groups" />
+        <StatCard title="Stalls Assigned" value={stalls?.length || 0} icon="store" />
+      </div>
 
       {/* Event Details */}
       <div className="bg-card-background dark:bg-card-dark p-6 rounded-xl border border-light-gray-border shadow-soft">
@@ -327,8 +326,52 @@ function VolunteersTab({ volunteers, eventId, onUpdate }) {
   const [location, setLocation] = useState("");
   const [adding, setAdding] = useState(false);
 
+  const handleDownloadExcel = () => {
+    if (volunteers.length === 0) {
+      alert("No volunteers to download");
+      return;
+    }
+
+    // Prepare data for Excel
+    const excelData = volunteers.map((vol, index) => ({
+      "S.No": index + 1,
+      "Volunteer Name": vol.full_name || vol.volunteer_name || "N/A",
+      "Email": vol.volunteer_email || vol.email || "N/A",
+      "Phone": vol.volunteer_phone || vol.phone || "N/A",
+      "Assigned Location": vol.assigned_location || "N/A",
+      "Volunteer ID": vol.volunteer_id || vol.id || "N/A",
+      "Assigned Date": vol.assigned_at ? new Date(vol.assigned_at).toLocaleString() : "N/A",
+      "Permissions": vol.permissions || "N/A"
+    }));
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 6 },  // S.No
+      { wch: 25 }, // Volunteer Name
+      { wch: 30 }, // Email
+      { wch: 15 }, // Phone
+      { wch: 20 }, // Assigned Location
+      { wch: 38 }, // Volunteer ID
+      { wch: 20 }, // Assigned Date
+      { wch: 20 }, // Permissions
+    ];
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Volunteers");
+
+    // Generate filename with current date
+    const fileName = `Event_Volunteers_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // Download file
+    XLSX.writeFile(workbook, fileName);
+  };
+
   const handleAddVolunteer = async () => {
-    if (!volunteerId) {
+    if (!volunteerId || !volunteerId.trim()) {
       alert("Please enter volunteer ID");
       return;
     }
@@ -336,8 +379,8 @@ function VolunteersTab({ volunteers, eventId, onUpdate }) {
     try {
       setAdding(true);
       const response = await api.post(`/event-manager/events/${eventId}/volunteers`, {
-        volunteer_id: volunteerId,
-        assigned_location: location
+        volunteer_id: volunteerId.trim(),
+        assigned_location: location.trim() || undefined
       });
 
       if (response.data?.success) {
@@ -372,54 +415,102 @@ function VolunteersTab({ volunteers, eventId, onUpdate }) {
 
   return (
     <div>
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <h2 className="text-lg font-semibold text-dark-text dark:text-white">Assigned Volunteers</h2>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm font-medium flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          <span>Add Volunteer</span>
-        </button>
+        <div className="flex gap-2">
+          {volunteers.length > 0 && (
+            <button
+              onClick={handleDownloadExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              <span>Download Excel</span>
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm font-medium flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            <span>Add Volunteer</span>
+          </button>
+        </div>
       </div>
 
       {volunteers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {volunteers.map((vol) => (
-            <div key={vol.id} className="bg-card-background dark:bg-card-dark p-4 rounded-lg border border-light-gray-border">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="font-medium text-dark-text dark:text-white">{vol.full_name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{vol.email}</p>
-                  {vol.assigned_location && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      <span className="material-symbols-outlined text-sm align-middle">location_on</span>
-                      {vol.assigned_location}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleRemoveVolunteer(vol.volunteer_id)}
-                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Volunteer Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Volunteer ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {volunteers.map((vol) => (
+                  <tr key={vol.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                          {vol.full_name?.charAt(0)?.toUpperCase() || "V"}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-dark-text dark:text-white">{vol.full_name || vol.volunteer_name || "N/A"}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {vol.assigned_at ? new Date(vol.assigned_at).toLocaleDateString() : ""}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{vol.volunteer_email || vol.email || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{vol.volunteer_phone || vol.phone || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{vol.assigned_location || "N/A"}</td>
+                    <td className="px-4 py-3">
+                      <div className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded max-w-xs truncate" title={vol.volunteer_id || vol.id}>
+                        {vol.volunteer_id || vol.id || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <button
+                        onClick={() => handleRemoveVolunteer(vol.volunteer_id)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                        title="Remove volunteer"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="text-center py-12 bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border">
           <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600">groups</span>
           <p className="text-gray-500 dark:text-gray-400 mt-2">No volunteers assigned yet</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Click "Add Volunteer" to assign volunteers to this event</p>
         </div>
       )}
 
       {/* Add Volunteer Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card-background dark:bg-card-dark p-6 rounded-xl max-w-md w-full">
+          <div className="bg-card-background dark:bg-card-dark p-6 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-dark-text dark:text-white mb-4">Add Volunteer</h3>
+
+            {/* Info Box */}
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                <span className="font-medium">Tip:</span> Enter the volunteer's ID (UUID format). You can find volunteer IDs from the system administrator.
+              </p>
+            </div>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -429,9 +520,12 @@ function VolunteersTab({ volunteers, eventId, onUpdate }) {
                   type="text"
                   value={volunteerId}
                   onChange={(e) => setVolunteerId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-600"
-                  placeholder="Enter volunteer ID"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600"
+                  placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Enter the volunteer's unique ID
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -441,21 +535,40 @@ function VolunteersTab({ volunteers, eventId, onUpdate }) {
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600"
                   placeholder="e.g., Main Gate, Registration Desk"
                 />
               </div>
             </div>
+
+            {/* Currently Assigned Volunteers Reference */}
+            {volunteers.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Currently Assigned Volunteers:</p>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {volunteers.slice(0, 5).map((vol) => (
+                    <div key={vol.id} className="text-xs text-gray-600 dark:text-gray-400">
+                      {vol.full_name} - <span className="font-mono text-[10px]">{vol.volunteer_id}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleAddVolunteer}
                 disabled={adding}
                 className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition disabled:opacity-50"
               >
-                {adding ? "Adding..." : "Add"}
+                {adding ? "Adding..." : "Add Volunteer"}
               </button>
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  setVolunteerId("");
+                  setLocation("");
+                }}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 Cancel
@@ -469,18 +582,93 @@ function VolunteersTab({ volunteers, eventId, onUpdate }) {
 }
 
 function RegistrationsTab({ registrations }) {
+  const getRegistrationStatusColor = (status) => {
+    switch (status) {
+      case "CONFIRMED": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      case "PENDING": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case "WAITLISTED": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+      case "CANCELLED": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+      default: return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
+    }
+  };
+
   const getPaymentStatusColor = (status) => {
     switch (status) {
       case "COMPLETED": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
       case "PENDING": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
       case "FAILED": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+      case "NOT_REQUIRED": return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
       default: return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
     }
   };
 
+  const formatStatus = (status) => {
+    if (!status) return "N/A";
+    return status.replace(/_/g, " ");
+  };
+
+  const handleDownloadExcel = () => {
+    if (registrations.length === 0) {
+      alert("No registrations to download");
+      return;
+    }
+
+    // Prepare data for Excel
+    const excelData = registrations.map((reg) => ({
+      "Student Name": reg.student_name || "N/A",
+      "Email": reg.student_email || "N/A",
+      "Registration No": reg.student_registration_no || "N/A",
+      "Phone": reg.student_phone || "N/A",
+      "Registration Status": formatStatus(reg.registration_status),
+      "Payment Status": formatStatus(reg.payment_status),
+      "Registration Date": reg.registered_at ? new Date(reg.registered_at).toLocaleString() : "N/A",
+      "Checked In": reg.has_checked_in ? "Yes" : "No",
+      "Check In Count": reg.check_in_count || 0,
+      "Last Check In": reg.last_check_in_at ? new Date(reg.last_check_in_at).toLocaleString() : "N/A",
+    }));
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 20 }, // Student Name
+      { wch: 30 }, // Email
+      { wch: 15 }, // Registration No
+      { wch: 15 }, // Phone
+      { wch: 18 }, // Registration Status
+      { wch: 18 }, // Payment Status
+      { wch: 20 }, // Registration Date
+      { wch: 12 }, // Checked In
+      { wch: 12 }, // Check In Count
+      { wch: 20 }, // Last Check In
+    ];
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Registrations");
+
+    // Generate filename with current date
+    const fileName = `Event_Registrations_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // Download file
+    XLSX.writeFile(workbook, fileName);
+  };
+
   return (
     <div>
-      <h2 className="text-lg font-semibold text-dark-text dark:text-white mb-4">Event Registrations</h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-dark-text dark:text-white">Event Registrations</h2>
+        {registrations.length > 0 && (
+          <button
+            onClick={handleDownloadExcel}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-lg">download</span>
+            <span>Download Excel</span>
+          </button>
+        )}
+      </div>
 
       {registrations.length > 0 ? (
         <div className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border overflow-hidden">
@@ -498,20 +686,20 @@ function RegistrationsTab({ registrations }) {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {registrations.map((reg) => (
                   <tr key={reg.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-3 text-sm text-dark-text dark:text-white">{reg.student_name || "N/A"}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{reg.student_email || "N/A"}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPaymentStatusColor(reg.registration_status)}`}>
-                        {reg.registration_status}
+                    <td className="px-4 py-3 text-sm text-dark-text dark:text-white whitespace-nowrap">{reg.student_name || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{reg.student_email || "N/A"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getRegistrationStatusColor(reg.registration_status)}`}>
+                        {formatStatus(reg.registration_status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${getPaymentStatusColor(reg.payment_status)}`}>
-                        {reg.payment_status || "N/A"}
+                        {formatStatus(reg.payment_status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(reg.registration_date).toLocaleDateString()}
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      {reg.registered_at ? new Date(reg.registered_at).toLocaleDateString() : "N/A"}
                     </td>
                   </tr>
                 ))}
@@ -534,8 +722,54 @@ function StallsTab({ stalls, eventId, onUpdate }) {
   const [stallId, setStallId] = useState("");
   const [adding, setAdding] = useState(false);
 
+  const handleDownloadExcel = () => {
+    if (stalls.length === 0) {
+      alert("No stalls to download");
+      return;
+    }
+
+    // Prepare data for Excel
+    const excelData = stalls.map((stall, index) => ({
+      "S.No": index + 1,
+      "Stall Number": stall.stall_number || "N/A",
+      "Stall Name": stall.stall_name || "N/A",
+      "School/Department": stall.school_name || "N/A",
+      "Location": stall.location || "N/A",
+      "Description": stall.description || "N/A",
+      "Stall ID": stall.id || "N/A",
+      "Total Feedback": stall.total_feedback_count || 0,
+      "Weighted Score": stall.weighted_score || 0
+    }));
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 6 },  // S.No
+      { wch: 12 }, // Stall Number
+      { wch: 25 }, // Stall Name
+      { wch: 25 }, // School/Department
+      { wch: 20 }, // Location
+      { wch: 35 }, // Description
+      { wch: 38 }, // Stall ID
+      { wch: 15 }, // Total Feedback
+      { wch: 15 }, // Weighted Score
+    ];
+
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Stalls");
+
+    // Generate filename with current date
+    const fileName = `Event_Stalls_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // Download file
+    XLSX.writeFile(workbook, fileName);
+  };
+
   const handleAddStall = async () => {
-    if (!stallId) {
+    if (!stallId || !stallId.trim()) {
       alert("Please enter stall ID");
       return;
     }
@@ -543,7 +777,7 @@ function StallsTab({ stalls, eventId, onUpdate }) {
     try {
       setAdding(true);
       const response = await api.post(`/event-manager/events/${eventId}/stalls`, {
-        stall_id: stallId
+        stall_id: stallId.trim()
       });
 
       if (response.data?.success) {
@@ -577,51 +811,106 @@ function StallsTab({ stalls, eventId, onUpdate }) {
 
   return (
     <div>
-      <div className="mb-4 flex justify-between items-center">
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <h2 className="text-lg font-semibold text-dark-text dark:text-white">Assigned Stalls</h2>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm font-medium flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          <span>Assign Stall</span>
-        </button>
+        <div className="flex gap-2">
+          {stalls.length > 0 && (
+            <button
+              onClick={handleDownloadExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-lg">download</span>
+              <span>Download Excel</span>
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm font-medium flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            <span>Assign Stall</span>
+          </button>
+        </div>
       </div>
 
       {stalls.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stalls.map((stall) => (
-            <div key={stall.id} className="bg-card-background dark:bg-card-dark p-4 rounded-lg border border-light-gray-border">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="font-medium text-dark-text dark:text-white">Stall #{stall.stall_number}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{stall.school_name || "N/A"}</p>
-                  {stall.stall_name && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{stall.stall_name}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleRemoveStall(stall.id)}
-                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stall #</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stall Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">School/Dept</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Location</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stall ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {stalls.map((stall) => (
+                  <tr key={stall.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center text-white font-semibold">
+                          <span className="material-symbols-outlined">store</span>
+                        </div>
+                        <div className="text-sm font-medium text-dark-text dark:text-white">
+                          #{stall.stall_number || "N/A"}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-medium text-dark-text dark:text-white">{stall.stall_name || "N/A"}</div>
+                      {stall.description && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs" title={stall.description}>
+                          {stall.description}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{stall.school_name || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{stall.location || "N/A"}</td>
+                    <td className="px-4 py-3">
+                      <div className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded max-w-xs truncate" title={stall.id}>
+                        {stall.id || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <button
+                        onClick={() => handleRemoveStall(stall.id)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                        title="Remove stall"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="text-center py-12 bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border">
           <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600">store</span>
           <p className="text-gray-500 dark:text-gray-400 mt-2">No stalls assigned yet</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Click "Assign Stall" to add stalls to this event</p>
         </div>
       )}
 
       {/* Add Stall Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card-background dark:bg-card-dark p-6 rounded-xl max-w-md w-full">
+          <div className="bg-card-background dark:bg-card-dark p-6 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-dark-text dark:text-white mb-4">Assign Stall</h3>
+
+            {/* Info Box */}
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                <span className="font-medium">Tip:</span> Enter the stall's ID (UUID format). You can find stall IDs from the system administrator.
+              </p>
+            </div>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -631,21 +920,42 @@ function StallsTab({ stalls, eventId, onUpdate }) {
                   type="text"
                   value={stallId}
                   onChange={(e) => setStallId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-600"
-                  placeholder="Enter stall ID"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600"
+                  placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Enter the stall's unique ID to assign it to this event
+                </p>
               </div>
             </div>
+
+            {/* Currently Assigned Stalls Reference */}
+            {stalls.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Currently Assigned Stalls:</p>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {stalls.slice(0, 5).map((stall) => (
+                    <div key={stall.id} className="text-xs text-gray-600 dark:text-gray-400">
+                      Stall #{stall.stall_number} - {stall.school_name} - <span className="font-mono text-[10px]">{stall.id}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleAddStall}
                 disabled={adding}
                 className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition disabled:opacity-50"
               >
-                {adding ? "Assigning..." : "Assign"}
+                {adding ? "Assigning..." : "Assign Stall"}
               </button>
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  setStallId("");
+                }}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
                 Cancel
