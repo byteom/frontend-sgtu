@@ -24,15 +24,22 @@ export default function AdminScansPage() {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const router = useRouter();
 
+  const [fetchError, setFetchError] = useState(null);
+
   const fetchScans = async () => {
     try {
       setLoading(true);
+      setFetchError(null);
       const res = await api.get("/check-in-out");
       if (res.data?.success) {
         setAllScans(res.data.data || []);
       }
     } catch (error) {
       console.error("Error fetching scans:", error);
+      const errorMsg = error.response?.data?.message || 
+                       (error.response?.status === 500 ? "Server error. Please try again later." : 
+                        "Failed to load scan records");
+      setFetchError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -255,7 +262,20 @@ export default function AdminScansPage() {
           </div>
 
           {/* Desktop Table View */}
-          {loading ? (
+          {fetchError ? (
+            <div className="hidden md:block bg-card-background dark:bg-card-dark shadow-soft border border-light-gray-border rounded-xl p-6">
+              <div className="text-center py-8">
+                <span className="material-symbols-outlined text-5xl text-red-400 mb-4">error</span>
+                <p className="text-red-600 dark:text-red-400 mb-4">{fetchError}</p>
+                <button
+                  onClick={fetchScans}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          ) : loading ? (
             <div className="hidden md:block bg-card-background dark:bg-card-dark shadow-soft border border-light-gray-border rounded-xl p-6">
               <div className="animate-pulse space-y-4">
                 {[1, 2, 3].map(i => (
@@ -362,7 +382,20 @@ export default function AdminScansPage() {
 
           {/* Mobile Card View */}
           <div className="md:hidden space-y-3">
-            {loading ? (
+            {fetchError ? (
+              <div className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border shadow-soft p-6">
+                <div className="text-center py-4">
+                  <span className="material-symbols-outlined text-4xl text-red-400 mb-3">error</span>
+                  <p className="text-red-600 dark:text-red-400 mb-4 text-sm">{fetchError}</p>
+                  <button
+                    onClick={fetchScans}
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            ) : loading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border shadow-soft p-4 animate-pulse">

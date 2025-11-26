@@ -65,8 +65,44 @@ export default function EventManagersPage() {
     }
   };
 
+  const validatePassword = (password) => {
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const isLongEnough = password.length >= 8;
+
+    if (!isLongEnough) return "Password must be at least 8 characters";
+    if (!hasUpperCase) return "Password must contain at least one uppercase letter";
+    if (!hasLowerCase) return "Password must contain at least one lowercase letter";
+    if (!hasNumber) return "Password must contain at least one number";
+    if (!hasSpecialChar) return "Password must contain at least one special character";
+    return null;
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) return "Phone number must be exactly 10 digits";
+    return null;
+  };
+
   const handleCreateManager = async (e) => {
     e.preventDefault();
+
+    // Validate phone
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) {
+      alert(phoneError);
+      return;
+    }
+
+    // Validate password
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      alert(passwordError);
+      return;
+    }
+
     try {
       const response = await api.post("/admin/event-managers", formData);
       if (response.data?.success) {
@@ -364,16 +400,20 @@ export default function EventManagersPage() {
                   minLength={8}
                   className="w-full px-4 py-2 border border-light-gray-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card-background dark:bg-gray-800 text-dark-text dark:text-white"
                 />
-                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                <p className="text-xs text-gray-500 mt-1">Min 8 chars with uppercase, lowercase, number & special char</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-dark-text dark:text-gray-300 mb-2">
-                  Phone
+                  Phone <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                  required
+                  pattern="\d{10}"
+                  maxLength={10}
+                  placeholder="10 digit phone number"
                   className="w-full px-4 py-2 border border-light-gray-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-card-background dark:bg-gray-800 text-dark-text dark:text-white"
                 />
               </div>
