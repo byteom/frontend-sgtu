@@ -20,6 +20,8 @@ export default function AdminStudentsPage() {
   const [sortDirection, setSortDirection] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   async function fetchStudents() {
     setLoading(true);
@@ -160,6 +162,11 @@ export default function AdminStudentsPage() {
     window.location.href = "/";
   };
 
+  const openStudentDetail = (student) => {
+    setSelectedStudent(student);
+    setShowDetailModal(true);
+  };
+
   return (
     <div className="flex min-h-screen bg-soft-background dark:bg-dark-background">
       <AdminSidebar onLogout={handleLogout} />
@@ -298,8 +305,9 @@ export default function AdminStudentsPage() {
       students.map((s, i) => (
       <div
         key={s.id}
+        onClick={() => openStudentDetail(s)}
         className={`grid grid-cols-[2fr_2fr_2fr_2fr_1.5fr_1.5fr_1.5fr_0.5fr] px-6 py-4 text-sm items-center border-b border-gray-100 dark:border-gray-800
-        hover:bg-gray-50 dark:hover:bg-gray-800/50 transition gap-4`}
+        hover:bg-gray-50 dark:hover:bg-gray-800/50 transition gap-4 cursor-pointer`}
       >
         {/* NAME */}
         <div className="font-medium text-dark-text dark:text-gray-200 truncate">
@@ -367,7 +375,8 @@ export default function AdminStudentsPage() {
               students.map((s) => (
                 <div
                   key={s.id}
-                  className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border shadow-soft p-4"
+                  onClick={() => openStudentDetail(s)}
+                  className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border shadow-soft p-4 cursor-pointer hover:shadow-md transition"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
@@ -448,6 +457,179 @@ export default function AdminStudentsPage() {
 
       </div>
       <AdminMobileNav />
+
+      {/* Student Detail Modal */}
+      {showDetailModal && selectedStudent && (
+        <StudentDetailModal
+          student={selectedStudent}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedStudent(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function StudentDetailModal({ student, onClose }) {
+  const formatDate = (dateString) => {
+    if (!dateString) return "—";
+    return new Date(dateString).toLocaleString();
+  };
+
+  const formatDuration = (minutes) => {
+    if (!minutes) return "—";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${String(mins).padStart(2, '0')}m`;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border shadow-soft max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-light-gray-border">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary text-3xl">person</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-dark-text dark:text-white">{student.full_name}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{student.registration_no}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <span className="material-symbols-outlined text-2xl">close</span>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Basic Info */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Basic Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DetailRow label="Student ID" value={student.id} mono />
+              <DetailRow label="Registration No" value={student.registration_no} />
+              <DetailRow label="Full Name" value={student.full_name} />
+              <DetailRow label="Email" value={student.email} />
+              <DetailRow label="Phone" value={student.phone} />
+              <DetailRow label="Date of Birth" value={student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : "—"} />
+            </div>
+          </div>
+
+          {/* Academic Info */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Academic Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DetailRow label="School/Department" value={student.school_name} />
+              <DetailRow label="Program" value={student.program_name} />
+              <DetailRow label="Batch" value={student.batch} />
+            </div>
+          </div>
+
+          {/* Address Info */}
+          {(student.address || student.pincode) && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Address</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <DetailRow label="Address" value={student.address} />
+                <DetailRow label="Pincode" value={student.pincode} />
+              </div>
+            </div>
+          )}
+
+          {/* Event Activity */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Event Activity</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+                {student.is_inside_event ? (
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                    Inside Event
+                  </span>
+                ) : (
+                  <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 font-medium">
+                    Outside Event
+                  </span>
+                )}
+              </div>
+              <DetailRow label="Total Scans" value={student.total_scan_count || 0} />
+              <DetailRow label="Feedbacks Given" value={student.feedback_count || 0} />
+              <DetailRow label="Time Spent" value={formatDuration(student.total_active_duration_minutes)} />
+              <DetailRow label="Last Check-in" value={formatDate(student.last_checkin_at)} />
+              <DetailRow label="Last Check-out" value={formatDate(student.last_checkout_at)} />
+            </div>
+          </div>
+
+          {/* Ranking Info */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Ranking Status</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Completed Ranking:</span>
+                {student.has_completed_ranking ? (
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                    Yes
+                  </span>
+                ) : (
+                  <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-medium">
+                    No
+                  </span>
+                )}
+              </div>
+              <DetailRow label="Selected Category" value={student.selected_category || "—"} />
+            </div>
+          </div>
+
+          {/* Account Info */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Account Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DetailRow label="Created At" value={formatDate(student.created_at)} />
+              <DetailRow label="Updated At" value={formatDate(student.updated_at)} />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Password Reset Required:</span>
+                {student.password_reset_required ? (
+                  <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">
+                    Yes
+                  </span>
+                ) : (
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                    No
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 p-6 border-t border-light-gray-border">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-light-gray-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition text-dark-text dark:text-white"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, mono }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{label}</label>
+      <p className={`text-dark-text dark:text-white ${mono ? 'font-mono text-xs' : 'text-sm'}`}>
+        {value || "—"}
+      </p>
     </div>
   );
 }
