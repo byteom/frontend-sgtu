@@ -207,7 +207,7 @@ export default function EventManagerProfile() {
                     <h2 className="text-lg font-semibold text-dark-text dark:text-white mb-4">Statistics</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-2xl font-bold text-primary">{profile.stats.total_events || 0}</p>
+                        <p className="text-2xl font-bold text-primary">{profile.stats.total_events_created || 0}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Total Events</p>
                       </div>
                       <div>
@@ -215,11 +215,11 @@ export default function EventManagerProfile() {
                         <p className="text-sm text-gray-500 dark:text-gray-400">Active Events</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-blue-600">{profile.stats.total_registrations || 0}</p>
+                        <p className="text-2xl font-bold text-blue-600">{profile.stats.total_registrations_across_events || 0}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Registrations</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-purple-600">{profile.stats.total_volunteers || 0}</p>
+                        <p className="text-2xl font-bold text-purple-600">{profile.stats.total_volunteers_assigned || 0}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Volunteers</p>
                       </div>
                     </div>
