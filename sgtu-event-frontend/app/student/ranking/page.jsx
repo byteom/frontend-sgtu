@@ -210,7 +210,7 @@ export default function RankingPage() {
                   Rank Your School's Stalls
                 </h2>
                 <p className="text-white/80 text-center">
-                  Select your top 3 favorite stalls from YOUR SCHOOL ONLY
+                  Below are the stalls from YOUR SCHOOL that you have already given feedback to
                 </p>
               </div>
             </section>
@@ -255,30 +255,65 @@ export default function RankingPage() {
               </div>
             ) : (
               <>
-                {/* ERROR MESSAGE */}
-                {error && (
+                {/* ERROR MESSAGE - Not enough feedbacks */}
+                {error && error.includes("feedback") && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-6">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                        <span className="material-symbols-outlined text-yellow-600 text-4xl">rate_review</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-yellow-700 dark:text-yellow-400">Feedback Required</h3>
+                      <p className="text-yellow-600 dark:text-yellow-400 text-center">{error}</p>
+                      <button
+                        onClick={() => router.push("/student/feedback")}
+                        className="px-6 py-3 bg-yellow-500 text-white font-semibold rounded-xl hover:bg-yellow-600 transition"
+                      >
+                        Give Feedback to Stalls
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* OTHER ERROR MESSAGE */}
+                {error && !error.includes("feedback") && (
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
                     <p className="text-red-600 dark:text-red-400 text-center">{error}</p>
                   </div>
                 )}
 
-                {/* INSTRUCTIONS */}
+                {/* INSTRUCTIONS - Only show if no error */}
+                {!error && (
                 <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/40 rounded-2xl p-6">
                   <div className="flex items-start gap-4">
                     <span className="material-symbols-outlined text-primary dark:text-primary text-3xl">info</span>
                     <div>
                       <h4 className="font-semibold text-dark-text dark:text-dark-text mb-2">Instructions</h4>
                       <ul className="text-sm text-gray-700 dark:text-gray-550 space-y-1">
-                        <li>• Select exactly 3 stalls from YOUR SCHOOL ONLY</li>
+                        <li>• Below stalls are ONLY from YOUR SCHOOL and you have already given feedback to them</li>
+                        <li>• Select exactly 3 stalls to rank</li>
                         <li>• Assign ranks: 1 (best), 2 (second), 3 (third)</li>
                         <li>• This is a ONE-TIME submission and cannot be changed</li>
-                        <li>• You can only rank stalls from your own school</li>
                       </ul>
                     </div>
                   </div>
                 </div>
+                )}
 
-                {/* STALLS GRID */}
+                {/* STALL COUNT INFO */}
+                {!error && stalls.length > 0 && (
+                  <div className="bg-accent/10 dark:bg-accent/20 border border-accent/30 dark:border-accent/40 rounded-xl p-4">
+                    <p className="text-center font-semibold text-dark-text dark:text-dark-text">
+                      📊 You have given feedback to <span className="text-accent text-lg">{stalls.length}</span> stall{stalls.length !== 1 ? 's' : ''} from your school
+                    </p>
+                    <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Select your top 3 favorites from these stalls
+                    </p>
+                  </div>
+                )}
+
+                {/* STALLS GRID - Only show if no error */}
+                {!error && stalls.length > 0 && (
+                <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {stalls.map((stall) => {
                     const selectedRank = rankings[stall.stall_id];
@@ -292,7 +327,12 @@ export default function RankingPage() {
                         }`}
                       >
                         <div className="mb-4">
-                          <h3 className="text-xl font-bold mb-1">{stall.stall_name}</h3>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="text-xl font-bold">{stall.stall_name}</h3>
+                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold whitespace-nowrap">
+                              ✓ Reviewed
+                            </span>
+                          </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             Stall #{stall.stall_number}
                           </p>
@@ -352,6 +392,8 @@ export default function RankingPage() {
                       Selected: {Object.keys(rankings).length} / 3 stalls
                     </p>
                   </div>
+                )}
+                </>
                 )}
               </>
             )}

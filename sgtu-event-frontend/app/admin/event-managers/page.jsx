@@ -530,40 +530,113 @@ export default function EventManagersPage() {
 
         {/* Detail Modal */}
         {showDetailModal && selectedManager && (
-          <Modal title="Event Manager Details" onClose={() => setShowDetailModal(false)}>
-            <div className="space-y-4">
-              <DetailRow label="Manager ID" value={selectedManager.id} mono />
-              <DetailRow label="Full Name" value={selectedManager.full_name} />
-              <DetailRow label="Email" value={selectedManager.email} />
-              <DetailRow label="Phone" value={selectedManager.phone || "Not provided"} />
-              <DetailRow label="Organization" value={selectedManager.organization || "Not provided"} />
-              <DetailRow label="Total Events Created" value={selectedManager.total_events_created || 0} />
-              <DetailRow label="Account Status" value={selectedManager.is_active ? "Active" : "Inactive"} />
-              <DetailRow label="Approval Status" value={selectedManager.is_approved_by_admin ? "Approved" : "Pending"} />
-              <DetailRow label="Created At" value={new Date(selectedManager.created_at).toLocaleString()} />
-              {selectedManager.approved_at && (
-                <DetailRow label="Approved At" value={new Date(selectedManager.approved_at).toLocaleString()} />
-              )}
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-card-background dark:bg-card-dark rounded-xl border border-light-gray-border shadow-soft max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-light-gray-border">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-3xl">manage_accounts</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-dark-text dark:text-white">{selectedManager.full_name}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{selectedManager.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <span className="material-symbols-outlined text-2xl">close</span>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                {/* Basic Info */}
+                <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-550 uppercase tracking-wider mb-4">Basic Information</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InfoCard label="Manager ID" value={selectedManager.id} mono />
+                    <InfoCard label="Full Name" value={selectedManager.full_name} />
+                    <InfoCard label="Email" value={selectedManager.email} />
+                    <InfoCard label="Phone" value={selectedManager.phone || "Not provided"} />
+                  </div>
+                </div>
+
+                {/* Organization Info */}
+                <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Organization Details</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InfoCard label="Organization" value={selectedManager.organization || "Not provided"} />
+                    <InfoCard label="Total Events Created" value={selectedManager.total_events_created || 0} />
+                  </div>
+                </div>
+
+                {/* Status Info */}
+                <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Account Status</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-card-dark rounded-lg p-3 border border-light-gray-border">
+                      <label className="block text-xs font-medium text-gray-400 mb-2">Account Status</label>
+                      {selectedManager.is_active ? (
+                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 text-xs rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    <div className="bg-white dark:bg-card-dark rounded-lg p-3 border border-light-gray-border">
+                      <label className="block text-xs font-medium text-gray-400 mb-2">Approval Status</label>
+                      {selectedManager.is_approved_by_admin ? (
+                        <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                          Approved
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-medium">
+                          Pending
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timestamps */}
+                <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Timestamps</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <InfoCard label="Created At" value={new Date(selectedManager.created_at).toLocaleString()} />
+                    {selectedManager.approved_at && (
+                      <InfoCard label="Approved At" value={new Date(selectedManager.approved_at).toLocaleString()} />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-3 p-6 border-t border-light-gray-border">
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    openEditModal(selectedManager);
+                  }}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg">edit</span>
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-4 py-2 border border-light-gray-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition text-dark-text dark:text-white"
+                >
+                  Close
+                </button>
+              </div>
             </div>
-            <div className="flex gap-3 pt-6">
-              <button
-                onClick={() => {
-                  setShowDetailModal(false);
-                  openEditModal(selectedManager);
-                }}
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined text-lg">edit</span>
-                <span>Edit</span>
-              </button>
-              <button
-                onClick={() => setShowDetailModal(false)}
-                className="px-4 py-2 border border-light-gray-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition text-dark-text dark:text-white"
-              >
-                Close
-              </button>
-            </div>
-          </Modal>
+          </div>
         )}
       </main>
       <AdminMobileNav />
@@ -595,6 +668,17 @@ function DetailRow({ label, value, mono }) {
     <div>
       <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{label}</label>
       <p className={`text-dark-text dark:text-white ${mono ? 'font-mono text-xs' : ''}`}>{value}</p>
+    </div>
+  );
+}
+
+function InfoCard({ label, value, mono }) {
+  return (
+    <div className="bg-card-background rounded-lg p-3 border border-light-gray-border">
+      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+      <p className={`text-dark-text font-medium ${mono ? 'font-mono text-xs break-all' : 'text-sm'}`}>
+        {value || "—"}
+      </p>
     </div>
   );
 }

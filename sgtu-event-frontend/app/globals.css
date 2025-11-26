@@ -36,7 +36,9 @@ body {
 /* text + bg + border utilities using CSS vars */
 .text-dark-text { color: var(--foreground); }
 .bg-soft-background { background: var(--background); }
+.bg-dark-background { background: #1a1f2b; }
 .bg-card-background { background: var(--card-background); }
+.bg-card-dark { background: var(--card-background); }
 .border-light-gray-border { border-color: var(--light-gray-border); }
 .text-primary { color: var(--primary); }
 .bg-primary { background: var(--primary); }

@@ -144,7 +144,7 @@ export default function StudentDashboardPage() {
                 </div>
 
                 <button
-                  onClick={() => goTo("/student/feedback")}
+                  onClick={() => goTo("/student/my-events")}
                   className="mt-8 w-full text-white font-semibold py-3 px-6 rounded-xl"
                   style={{ backgroundColor: "#2B6CB0" }}
                   onMouseEnter={(e) => (e.target.style.backgroundColor = "#1E3A8A")}

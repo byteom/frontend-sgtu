@@ -275,13 +275,21 @@ function RegistrationCard({ registration, onViewQR }) {
       </div>
 
       {registration.registration_status === "CONFIRMED" && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-4">
           <button
             onClick={onViewQR}
             className="flex items-center gap-3 text-sm text-primary hover:text-primary-dark transition cursor-pointer group"
           >
             <span className="material-symbols-outlined group-hover:scale-110 transition-transform">qr_code_2</span>
             <span className="group-hover:underline">View QR Code for check-in</span>
+            <span className="material-symbols-outlined text-base">arrow_forward</span>
+          </button>
+          <button
+            onClick={() => window.location.href = "/student/feedback"}
+            className="flex items-center gap-3 text-sm text-yellow-600 hover:text-yellow-700 transition cursor-pointer group"
+          >
+            <span className="material-symbols-outlined group-hover:scale-110 transition-transform">rate_review</span>
+            <span className="group-hover:underline">Give Feedback</span>
             <span className="material-symbols-outlined text-base">arrow_forward</span>
           </button>
         </div>

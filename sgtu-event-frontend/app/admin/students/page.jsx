@@ -492,7 +492,7 @@ function StudentDetailModal({ student, onClose }) {
         <div className="flex items-center justify-between p-6 border-b border-light-gray-border">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-3xl">person</span>
+              <span className="material-symbols-outlined text-primary text-3xl">school</span>
             </div>
             <div>
               <h2 className="text-xl font-semibold text-dark-text dark:text-white">{student.full_name}</h2>
@@ -510,97 +510,97 @@ function StudentDetailModal({ student, onClose }) {
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Basic Info */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Basic Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DetailRow label="Student ID" value={student.id} mono />
-              <DetailRow label="Registration No" value={student.registration_no} />
-              <DetailRow label="Full Name" value={student.full_name} />
-              <DetailRow label="Email" value={student.email} />
-              <DetailRow label="Phone" value={student.phone} />
-              <DetailRow label="Date of Birth" value={student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : "—"} />
+          <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <InfoCard label="Student ID" value={student.id} mono />
+              <InfoCard label="Registration No" value={student.registration_no} />
+              <InfoCard label="Full Name" value={student.full_name} />
+              <InfoCard label="Email" value={student.email} />
+              <InfoCard label="Phone" value={student.phone} />
+              <InfoCard label="Date of Birth" value={student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : null} />
             </div>
           </div>
 
           {/* Academic Info */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Academic Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DetailRow label="School/Department" value={student.school_name} />
-              <DetailRow label="Program" value={student.program_name} />
-              <DetailRow label="Batch" value={student.batch} />
+          <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Academic Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <InfoCard label="School/Department" value={student.school_name} />
+              <InfoCard label="Program" value={student.program_name} />
+              <InfoCard label="Batch" value={student.batch} />
             </div>
           </div>
 
           {/* Address Info */}
           {(student.address || student.pincode) && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Address</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <DetailRow label="Address" value={student.address} />
-                <DetailRow label="Pincode" value={student.pincode} />
+            <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Address</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <InfoCard label="Address" value={student.address} />
+                <InfoCard label="Pincode" value={student.pincode} />
               </div>
             </div>
           )}
 
           {/* Event Activity */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Event Activity</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+          <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Event Activity</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-white dark:bg-card-dark rounded-lg p-3 border border-light-gray-border">
+                <label className="block text-xs font-medium text-gray-400 mb-2">Current Status</label>
                 {student.is_inside_event ? (
-                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                  <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
                     Inside Event
                   </span>
                 ) : (
-                  <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 font-medium">
+                  <span className="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 font-medium">
                     Outside Event
                   </span>
                 )}
               </div>
-              <DetailRow label="Total Scans" value={student.total_scan_count || 0} />
-              <DetailRow label="Feedbacks Given" value={student.feedback_count || 0} />
-              <DetailRow label="Time Spent" value={formatDuration(student.total_active_duration_minutes)} />
-              <DetailRow label="Last Check-in" value={formatDate(student.last_checkin_at)} />
-              <DetailRow label="Last Check-out" value={formatDate(student.last_checkout_at)} />
+              <InfoCard label="Total Scans" value={student.total_scan_count || 0} />
+              <InfoCard label="Feedbacks Given" value={student.feedback_count || 0} />
+              <InfoCard label="Time Spent" value={formatDuration(student.total_active_duration_minutes)} />
+              <InfoCard label="Last Check-in" value={formatDate(student.last_checkin_at)} />
+              <InfoCard label="Last Check-out" value={formatDate(student.last_checkout_at)} />
             </div>
           </div>
 
           {/* Ranking Info */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Ranking Status</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Completed Ranking:</span>
+          <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Ranking Status</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-white dark:bg-card-dark rounded-lg p-3 border border-light-gray-border">
+                <label className="block text-xs font-medium text-gray-400 mb-2">Completed Ranking</label>
                 {student.has_completed_ranking ? (
-                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                  <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
                     Yes
                   </span>
                 ) : (
-                  <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-medium">
+                  <span className="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-medium">
                     No
                   </span>
                 )}
               </div>
-              <DetailRow label="Selected Category" value={student.selected_category || "—"} />
+              <InfoCard label="Selected Category" value={student.selected_category} />
             </div>
           </div>
 
           {/* Account Info */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Account Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DetailRow label="Created At" value={formatDate(student.created_at)} />
-              <DetailRow label="Updated At" value={formatDate(student.updated_at)} />
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Password Reset Required:</span>
+          <div className="bg-soft-background dark:bg-dark-background rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Account Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <InfoCard label="Created At" value={formatDate(student.created_at)} />
+              <InfoCard label="Updated At" value={formatDate(student.updated_at)} />
+              <div className="bg-white dark:bg-card-dark rounded-lg p-3 border border-light-gray-border">
+                <label className="block text-xs font-medium text-gray-400 mb-2">Password Reset Required</label>
                 {student.password_reset_required ? (
-                  <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">
+                  <span className="px-3 py-1 text-xs rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">
                     Yes
                   </span>
                 ) : (
-                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                  <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
                     No
                   </span>
                 )}
@@ -619,6 +619,17 @@ function StudentDetailModal({ student, onClose }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function InfoCard({ label, value, mono }) {
+  return (
+    <div className="bg-card-background rounded-lg p-3 border border-light-gray-border">
+      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+      <p className={`text-dark-text font-medium ${mono ? 'font-mono text-xs break-all' : 'text-sm'}`}>
+        {value || "—"}
+      </p>
     </div>
   );
 }

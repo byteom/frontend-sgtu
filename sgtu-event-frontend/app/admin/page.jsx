@@ -15,7 +15,10 @@ export default function AdminHome() {
     totalStudents: 0,
     totalVolunteers: 0,
     totalStalls: 0,
-    activeCheckIns: 0
+    totalSchools: 0,
+    totalEvents: 0,
+    activeEvents: 0,
+    pendingEvents: 0
   });
   const [recentScans, setRecentScans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,18 +51,31 @@ export default function AdminHome() {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const [statsRes, checkInRes, scansRes] = await Promise.all([
+      const [statsRes, scansRes, eventsRes, stallsRes] = await Promise.all([
         api.get("/admin/stats"),
-        api.get("/check-in-out/stats").catch(() => ({ data: { data: { active_check_ins: 0 } } })),
-        api.get("/check-in-out?limit=4").catch(() => ({ data: { data: [] } }))
+        api.get("/check-in-out?limit=4").catch(() => ({ data: { data: [] } })),
+        api.get("/admin/events").catch(() => ({ data: { data: { events: [] } } })),
+        api.get("/admin/stalls").catch(() => ({ data: { data: [] } } ))
       ]);
+      
+      // Calculate events stats
+      const events = eventsRes.data?.data?.events || [];
+      const activeEvents = events.filter(e => e.status === "ACTIVE" || e.status === "APPROVED").length;
+      const pendingEvents = events.filter(e => e.status === "PENDING_APPROVAL").length;
+      
+      // Get unique schools from stalls
+      const stalls = stallsRes.data?.data || [];
+      const uniqueSchools = new Set(stalls.map(s => s.school_id).filter(Boolean));
       
       if (statsRes.data?.success) {
         setStats({
           totalStudents: statsRes.data.data.totalStudents || 0,
           totalVolunteers: statsRes.data.data.totalVolunteers || 0,
-          totalStalls: statsRes.data.data.totalStalls || 0,
-          activeCheckIns: checkInRes.data?.data?.active_check_ins || 0
+          totalStalls: statsRes.data.data.totalStalls || stalls.length || 0,
+          totalSchools: uniqueSchools.size || 0,
+          totalEvents: events.length,
+          activeEvents: activeEvents,
+          pendingEvents: pendingEvents
         });
       }
 
@@ -106,8 +122,8 @@ export default function AdminHome() {
           </div>
           
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map(i => (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => (
                 <div key={i} className="p-5 rounded-xl border border-gray-200 bg-white dark:bg-card-dark shadow-sm animate-pulse">
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-3"></div>
                   <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
@@ -115,36 +131,72 @@ export default function AdminHome() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <Card title="Total Schools" value={stats.totalStalls || 12} icon="account_balance" change="+2 This month" positive />
-              <Card title="Total Events" value={48} icon="event" subtitle="Active: 4" />
-              <Card title="Participants" value={stats.totalStudents} icon="groups" change="+15% vs last event" positive />
-              <Card title="Scan Rate" value="89%" icon="qr_code_scanner" change="-2% Today" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <Card title="Total Schools" value={stats.totalSchools} icon="account_balance" subtitle={`${stats.totalStalls} stalls`} />
+              <Card title="Total Events" value={stats.totalEvents} icon="event" subtitle={`Active: ${stats.activeEvents}${stats.pendingEvents > 0 ? ` | Pending: ${stats.pendingEvents}` : ''}`} />
+              <Card title="Participants" value={stats.totalStudents} icon="groups" subtitle={`${stats.totalVolunteers} volunteers`} />
             </div>
           )}
 
-          {/* Event Engagement Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            <div className="lg:col-span-2 bg-card-background dark:bg-card-dark p-4 sm:p-6 rounded-xl border border-light-gray-border shadow-soft">
+          {/* Quick Stats Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div className="bg-card-background dark:bg-card-dark p-4 sm:p-6 rounded-xl border border-light-gray-border shadow-soft">
               <div className="mb-4">
-                <h3 className="text-sm sm:text-base font-semibold text-dark-text dark:text-white">Event Engagement</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Last 7 days</p>
+                <h3 className="text-sm sm:text-base font-semibold text-dark-text dark:text-white">Overview Summary</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Current system status</p>
               </div>
-              <div className="h-48 flex items-center justify-center text-gray-400 text-sm">
-                Minimal Bar Chart Here
+              <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-b border-light-gray-border">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Stalls</span>
+                  <span className="text-sm font-semibold text-dark-text dark:text-white">{stats.totalStalls}</span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-light-gray-border">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Volunteers</span>
+                  <span className="text-sm font-semibold text-dark-text dark:text-white">{stats.totalVolunteers}</span>
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Pending Event Approvals</span>
+                  <span className={`text-sm font-semibold ${stats.pendingEvents > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
+                    {stats.pendingEvents}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Recent Uploads */}
             <div className="bg-card-background dark:bg-card-dark p-4 sm:p-6 rounded-xl border border-light-gray-border shadow-soft">
               <div className="mb-4">
-                <h3 className="text-sm sm:text-base font-semibold text-dark-text dark:text-white">Recent Uploads</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">New documents and assets</p>
+                <h3 className="text-sm sm:text-base font-semibold text-dark-text dark:text-white">Quick Actions</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Common admin tasks</p>
               </div>
-              <div className="space-y-3">
-                <UploadItem name="Event_Schedule_Final.pdf" type="pdf" school="School of Engineering" />
-                <UploadItem name="Event_Banner_v2.png" type="image" school="Marketing Dept" />
-                <UploadItem name="Opening_Ceremony.mp4" type="video" school="School of Management" />
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={() => router.push('/admin/students')}
+                  className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-light-gray-border hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  <span className="material-symbols-outlined text-primary">groups</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Students</span>
+                </button>
+                <button 
+                  onClick={() => router.push('/admin/volunteers')}
+                  className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-light-gray-border hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  <span className="material-symbols-outlined text-primary">badge</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Volunteers</span>
+                </button>
+                <button 
+                  onClick={() => router.push('/admin/events')}
+                  className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-light-gray-border hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  <span className="material-symbols-outlined text-primary">event</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Events</span>
+                </button>
+                <button 
+                  onClick={() => router.push('/admin/stalls')}
+                  className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-light-gray-border hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                >
+                  <span className="material-symbols-outlined text-primary">storefront</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Stalls</span>
+                </button>
               </div>
             </div>
           </div>
@@ -267,26 +319,7 @@ function Card({ title, value, icon, subtitle, change, positive }) {
   );
 }
 
-function UploadItem({ name, type, school }) {
-  const iconMap = {
-    pdf: { icon: 'description', color: 'bg-blue-100 text-blue-600' },
-    image: { icon: 'image', color: 'bg-yellow-100 text-yellow-600' },
-    video: { icon: 'videocam', color: 'bg-green-100 text-green-600' }
-  };
-  const { icon, color } = iconMap[type] || iconMap.pdf;
 
-  return (
-    <div className="flex items-center gap-3">
-      <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center shrink-0`}>
-        <span className="material-symbols-outlined text-lg">{icon}</span>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{name}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{school}</p>
-      </div>
-    </div>
-  );
-}
 
 function ScanRow({ participantId, event, timestamp, status }) {
   return (
