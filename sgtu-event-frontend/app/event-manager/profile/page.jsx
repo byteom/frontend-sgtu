@@ -145,41 +145,23 @@ export default function EventManagerProfile() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Account Status */}
+                {/* Approval Status */}
                 <div className="bg-card-background dark:bg-card-dark p-6 rounded-xl border border-light-gray-border shadow-soft">
-                  <h2 className="text-lg font-semibold text-dark-text dark:text-white mb-4">Account Status</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Approval Status</p>
-                      <div className="mt-1">
-                        {profile?.manager?.is_approved_by_admin ? (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-sm font-medium">
-                            <span className="material-symbols-outlined text-base">check_circle</span>
-                            Approved
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full text-sm font-medium">
-                            <span className="material-symbols-outlined text-base">pending</span>
-                            Pending Approval
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Account Status</p>
-                      <div className="mt-1">
-                        {profile?.manager?.is_active ? (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-sm font-medium">
-                            <span className="material-symbols-outlined text-base">check_circle</span>
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-full text-sm font-medium">
-                            <span className="material-symbols-outlined text-base">cancel</span>
-                            Inactive
-                          </span>
-                        )}
-                      </div>
+                  <h2 className="text-lg font-semibold text-dark-text dark:text-white mb-4">Approval Status</h2>
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                    <div className="mt-1">
+                      {profile?.manager?.is_approved_by_admin ? (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-sm font-medium">
+                          <span className="material-symbols-outlined text-base">check_circle</span>
+                          Approved
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full text-sm font-medium">
+                          <span className="material-symbols-outlined text-base">pending</span>
+                          Pending Approval
+                        </span>
+                      )}
                     </div>
                   </div>
 
